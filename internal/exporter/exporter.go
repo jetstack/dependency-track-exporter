@@ -71,16 +71,15 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 
 func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 	var (
-		info = prometheus.NewGaugeVec(
+		active = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: prometheus.BuildFQName(Namespace, "project", "info"),
-				Help: "Project information.",
+				Name: prometheus.BuildFQName(Namespace, "project", "active"),
+				Help: "Is this project active?",
 			},
 			[]string{
 				"uuid",
 				"name",
 				"version",
-				"active",
 			},
 		)
 		vulnerabilities = prometheus.NewGaugeVec(
@@ -90,6 +89,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			},
 			[]string{
 				"uuid",
+				"name",
+				"version",
 				"severity",
 			},
 		)
@@ -100,6 +101,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			},
 			[]string{
 				"uuid",
+				"name",
+				"version",
 				"type",
 				"state",
 				"analysis",
@@ -113,6 +116,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			},
 			[]string{
 				"uuid",
+				"name",
+				"version",
 			},
 		)
 		inheritedRiskScore = prometheus.NewGaugeVec(
@@ -122,11 +127,13 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			},
 			[]string{
 				"uuid",
+				"name",
+				"version",
 			},
 		)
 	)
 	registry.MustRegister(
-		info,
+		active,
 		vulnerabilities,
 		policyViolations,
 		lastBOMImport,
@@ -139,12 +146,15 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 	}
 
 	for _, project := range projects {
-		info.With(prometheus.Labels{
+		var isActive float64
+		if project.Active {
+			isActive = 1
+		}
+		active.With(prometheus.Labels{
 			"uuid":    project.UUID,
 			"name":    project.Name,
 			"version": project.Version,
-			"active":  strconv.FormatBool(project.Active),
-		}).Set(1)
+		}).Set(isActive)
 
 		severities := map[string]int32{
 			"CRITICAL":   project.Metrics.Critical,
@@ -156,11 +166,22 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		for severity, v := range severities {
 			vulnerabilities.With(prometheus.Labels{
 				"uuid":     project.UUID,
+				"name":     project.Name,
+				"version":  project.Version,
 				"severity": severity,
 			}).Set(float64(v))
 		}
-		lastBOMImport.WithLabelValues(project.UUID).Set(float64(project.LastBomImport.Unix()))
-		inheritedRiskScore.WithLabelValues(project.UUID).Set(project.Metrics.InheritedRiskScore)
+		lastBOMImport.With(prometheus.Labels{
+			"uuid":    project.UUID,
+			"name":    project.Name,
+			"version": project.Version,
+		}).Set(float64(project.LastBomImport.Unix()))
+
+		inheritedRiskScore.With(prometheus.Labels{
+			"uuid":    project.UUID,
+			"name":    project.Name,
+			"version": project.Version,
+		}).Set(project.Metrics.InheritedRiskScore)
 	}
 
 	violations, err := e.Client.GetViolations(true)
@@ -181,6 +202,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 					for _, possibleSuppressed := range []string{"true", "false"} {
 						policyViolations.With(prometheus.Labels{
 							"uuid":       violation.Project.UUID,
+							"name":       violation.Project.Name,
+							"version":    violation.Project.Version,
 							"type":       possibleType,
 							"state":      possibleState,
 							"analysis":   possibleAnalysis,
@@ -200,6 +223,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		}
 		policyViolations.With(prometheus.Labels{
 			"uuid":       violation.Project.UUID,
+			"name":       violation.Project.Name,
+			"version":    violation.Project.Version,
 			"type":       violation.Type,
 			"state":      violation.PolicyCondition.Policy.ViolationState,
 			"analysis":   analysisState,
