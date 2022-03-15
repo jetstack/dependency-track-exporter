@@ -44,13 +44,13 @@ Retrieve the number of `WARN` policy violations that have not been analyzed or
 suppressed:
 
 ```
-dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"}
+dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
 ```
 
 Exclude inactive projects:
 
 ```
 sum(dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"}) by (uuid,name,version) 
-* on(uuid,name,version) dependency_track_project_active
+* on(uuid,name,version) dependency_track_project_active > 0
 ```
 
