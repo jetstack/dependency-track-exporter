@@ -4,7 +4,6 @@ Exports Prometheus metrics for [Dependency Track](https://dependencytrack.org/).
 
 ## TODO
 
-- Tests for the client.
 - Github Actions workflows for tests and release
 
 ## Usage
