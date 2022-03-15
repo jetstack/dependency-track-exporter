@@ -50,7 +50,7 @@ dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",ana
 Exclude inactive projects:
 
 ```
-sum(dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"}) by (uuid,name,version) 
-* on(uuid,name,version) dependency_track_project_active > 0
+dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
+and on(uuid,name,version) dependency_track_project_active == 1
 ```
 
