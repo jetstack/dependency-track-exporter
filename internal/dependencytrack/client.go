@@ -16,7 +16,7 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-// Client interacts with Dependency Track via the API
+// Client interacts with Dependency-Track via the API
 type Client struct {
 	c    *http.Client
 	opts *options

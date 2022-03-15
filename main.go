@@ -23,8 +23,8 @@ func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9916").String()
 		metricsPath   = kingpin.Flag("web.metrics-path", "Path under which to expose metrics").Default("/metrics").String()
-		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency Track server address (default: %s or $%s)", dependencytrack.DefaultAddress, dependencytrack.EnvAddress)).String()
-		dtAPIKey      = kingpin.Flag("dtrack.api-key", fmt.Sprintf("Dependency Track API key (default: $%s)", dependencytrack.EnvAPIKey)).String()
+		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency-Track server address (default: %s or $%s)", dependencytrack.DefaultAddress, dependencytrack.EnvAddress)).String()
+		dtAPIKey      = kingpin.Flag("dtrack.api-key", fmt.Sprintf("Dependency-Track API key (default: $%s)", dependencytrack.EnvAPIKey)).String()
 		promlogConfig = promlog.Config{}
 	)
 
@@ -53,9 +53,9 @@ func main() {
 	http.HandleFunc(*metricsPath, e.HandlerFunc())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<html>
-						 <head><title>Dependency Track Exporter</title></head>
+						 <head><title>Dependency-Track Exporter</title></head>
 						 <body>
-						 <h1>Dependency Track Exporter</h1>
+						 <h1>Dependency-Track Exporter</h1>
 						 <p><a href='` + *metricsPath + `'>Metrics</a></p>
 						 </body>
 						 </html>`))

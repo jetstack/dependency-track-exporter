@@ -17,7 +17,7 @@ const (
 	Namespace string = "dependency_track"
 )
 
-// Exporter exports metrics from a Dependency Track server
+// Exporter exports metrics from a Dependency-Track server
 type Exporter struct {
 	Client *dependencytrack.Client
 	Logger log.Logger

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Project is a project in Dependency Track
+// Project is a project in Dependency-Track
 type Project struct {
 	Name          string         `json:"name"`
 	Version       string         `json:"version"`

@@ -3,13 +3,13 @@ package dependencytrack
 import "os"
 
 const (
-	// DefaultAddress is the default address of the Dependency Track server.
+	// DefaultAddress is the default address of the Dependency-Track server.
 	DefaultAddress string = "http://localhost:8080"
 
-	// EnvAddress sets the address the Dependency Track server.
+	// EnvAddress sets the address the Dependency-Track server.
 	EnvAddress string = "DEPENDENCY_TRACK_ADDR"
 
-	// EnvAPIKey sets the api key for the Dependency Track API
+	// EnvAPIKey sets the api key for the Dependency-Track API
 	EnvAPIKey string = "DEPENDENCY_TRACK_API_KEY"
 )
 

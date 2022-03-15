@@ -1,6 +1,6 @@
-# Dependency Track Exporter
+# Dependency-Track Exporter
 
-Exports Prometheus metrics for [Dependency Track](https://dependencytrack.org/).
+Exports Prometheus metrics for [Dependency-Track](https://dependencytrack.org/).
 
 ## TODO
 
@@ -18,9 +18,9 @@ Flags:
       --web.metrics-path="/metrics"
                            Path under which to expose metrics
       --dtrack.address=DTRACK.ADDRESS
-                           Dependency Track server address (default: http://localhost:8080 or $DEPENDENCY_TRACK_ADDR)
+                           Dependency-Track server address (default: http://localhost:8080 or $DEPENDENCY_TRACK_ADDR)
       --dtrack.api-key=DTRACK.API-KEY
-                           Dependency Track API key (default: $DEPENDENCY_TRACK_API_KEY)
+                           Dependency-Track API key (default: $DEPENDENCY_TRACK_API_KEY)
       --log.level=info     Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt  Output format of log messages. One of: [logfmt, json]
       --version            Show application version.
