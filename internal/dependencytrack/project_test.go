@@ -27,6 +27,7 @@ func TestGetProjects(t *testing.T) {
 			    "name": "foo",
 			    "version": "bar",
 			    "active": true,
+			    "classifier": "CONTAINER",
 			    "lastBomImport": %d,
 			    "metrics": {
 			      "critical": 0,
@@ -50,6 +51,7 @@ func TestGetProjects(t *testing.T) {
 			    "name": "bar",
 			    "version": "foo",
 			    "active": false,
+			    "classifier": "APPLICATION",
 			    "metrics": {
 			      "critical": 50,
 			      "high": 25,
@@ -80,6 +82,7 @@ func TestGetProjects(t *testing.T) {
 		{
 			Name:          "foo",
 			Version:       "bar",
+			Classifier:    "CONTAINER",
 			Active:        true,
 			LastBomImport: Time{now},
 			Metrics: ProjectMetrics{
@@ -103,6 +106,7 @@ func TestGetProjects(t *testing.T) {
 		{
 			Name:          "bar",
 			Version:       "foo",
+			Classifier:    "APPLICATION",
 			Active:        false,
 			LastBomImport: Time{},
 			Metrics: ProjectMetrics{

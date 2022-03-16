@@ -27,8 +27,7 @@ Flags:
 | Metric                                          | Meaning                                                | Labels                                           |
 | ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------ |
 | dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.       |                                                  |
-| dependency_track_project_active                 | Is this project active?                                | uuid, name, version                              |
-| dependency_track_project_tags                   | Project tags.                                          | uuid, name, version, tags                        |
+| dependency_track_project_info                   | Project information.                                   | uuid, name, version, active, tags                |
 | dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.   | uuid, name, version, severity                    |
 | dependency_track_project_policy_violations      | Policy violations for a project.                       | uuid, name, version, state, analysis, suppressed |
 | dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp. | uuid, name, version                              |
@@ -47,23 +46,20 @@ Exclude inactive projects:
 
 ```
 dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
-and on(uuid,name,version) dependency_track_project_active == 1
+and on(uuid) dependency_track_project_info{active="true"}
 ```
 
 Only include projects tagged with `prod`:
 
 ```
 dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
-and on(uuid,name,version) dependency_track_project_active == 1
-and on(uuid,name,version) dependency_track_project_tags{tags=~".*,prod,.*"}
+and on(uuid) dependency_track_project_info{active="true",tags=~".*,prod,.*"}
 ```
 
-Or, join the tags label into the returned series for use in alerting rules:
+Or, join the tags label into the returned series. Filtering on active/tag could
+then happen in alert routes:
 
 ```
-(
-  dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
-  and on(uuid,name,version) dependency_track_project_active == 1
-)
-* on (uuid,name,version) group_left(tags) dependency_track_project_tags
+(dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0)
+* on (uuid) group_left(tags,active) dependency_track_project_info
 ```

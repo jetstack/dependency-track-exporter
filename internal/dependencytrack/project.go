@@ -8,6 +8,7 @@ import (
 type Project struct {
 	Name          string         `json:"name"`
 	Version       string         `json:"version"`
+	Classifier    string         `json:"classifier"`
 	Active        bool           `json:"active"`
 	LastBomImport Time           `json:"lastBomImport"`
 	Metrics       ProjectMetrics `json:"metrics"`

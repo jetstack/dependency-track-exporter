@@ -71,26 +71,17 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 
 func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 	var (
-		active = prometheus.NewGaugeVec(
+		info = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: prometheus.BuildFQName(Namespace, "project", "active"),
-				Help: "Is this project active?",
+				Name: prometheus.BuildFQName(Namespace, "project", "info"),
+				Help: "Project information.",
 			},
 			[]string{
 				"uuid",
 				"name",
 				"version",
-			},
-		)
-		tags = prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: prometheus.BuildFQName(Namespace, "project", "tags"),
-				Help: "Project tags.",
-			},
-			[]string{
-				"uuid",
-				"name",
-				"version",
+				"classifier",
+				"active",
 				"tags",
 			},
 		)
@@ -145,8 +136,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		)
 	)
 	registry.MustRegister(
-		active,
-		tags,
+		info,
 		vulnerabilities,
 		policyViolations,
 		lastBOMImport,
@@ -159,25 +149,17 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 	}
 
 	for _, project := range projects {
-		var isActive float64
-		if project.Active {
-			isActive = 1
-		}
-		active.With(prometheus.Labels{
-			"uuid":    project.UUID,
-			"name":    project.Name,
-			"version": project.Version,
-		}).Set(isActive)
-
 		projTags := ","
 		for _, t := range project.Tags {
 			projTags = projTags + t.Name + ","
 		}
-		tags.With(prometheus.Labels{
-			"uuid":    project.UUID,
-			"name":    project.Name,
-			"version": project.Version,
-			"tags":    projTags,
+		info.With(prometheus.Labels{
+			"uuid":       project.UUID,
+			"name":       project.Name,
+			"version":    project.Version,
+			"classifier": project.Classifier,
+			"active":     strconv.FormatBool(project.Active),
+			"tags":       projTags,
 		}).Set(1)
 
 		severities := map[string]int32{
