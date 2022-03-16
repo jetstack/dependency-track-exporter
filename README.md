@@ -24,14 +24,16 @@ Flags:
 
 ## Metrics
 
-| Metric                                          | Meaning                                                | Labels                                           |
-| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------ |
-| dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.       |                                                  |
-| dependency_track_project_info                   | Project information.                                   | uuid, name, version, active, tags                |
-| dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.   | uuid, name, version, severity                    |
-| dependency_track_project_policy_violations      | Policy violations for a project.                       | uuid, name, version, state, analysis, suppressed |
-| dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp. | uuid, name, version                              |
-| dependency_track_project_inherited_risk_score   | Inherited risk score for a project.                    | uuid, name, version                              |
+| Metric                                          | Meaning                                                               | Labels                                           |
+| ----------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.                      |                                                  |
+| dependency_track_portfolio_vulnerabilities      | Number of vulnerabilities across the whole portfolio, by severity.    | severity                                         |
+| dependency_track_portfolio_findings             | Number of findings across the whole portfolio, audited and unaudited. | audited                                          |
+| dependency_track_project_info                   | Project information.                                                  | uuid, name, version, active, tags                |
+| dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.                  | uuid, name, version, severity                    |
+| dependency_track_project_policy_violations      | Policy violations for a project.                                      | uuid, name, version, state, analysis, suppressed |
+| dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp.                | uuid, name, version                              |
+| dependency_track_project_inherited_risk_score   | Inherited risk score for a project.                                   | uuid, name, version                              |
 
 ## Example queries
 

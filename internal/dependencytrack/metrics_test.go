@@ -20,7 +20,14 @@ func TestGetCurrentPortfolioMetrics(t *testing.T) {
 		fmt.Fprintf(w,
 			`
 			{
-			  "inheritedRiskScore": 2500.42
+			  "critical": 0,
+			  "high": 1,
+			  "low": 2,
+			  "medium": 3,
+			  "unassigned": 4,
+			  "inheritedRiskScore": 2500.42,
+			  "findingsAudited": 15,
+			  "findingsUnaudited": 134
 			}
 			`,
 		)
@@ -32,7 +39,14 @@ func TestGetCurrentPortfolioMetrics(t *testing.T) {
 	}
 
 	want := &PortfolioMetrics{
+		Critical:           0,
+		High:               1,
+		Low:                2,
+		Medium:             3,
+		Unassigned:         4,
 		InheritedRiskScore: 2500.42,
+		FindingsAudited:    15,
+		FindingsUnaudited:  134,
 	}
 
 	if !cmp.Equal(got, want) {

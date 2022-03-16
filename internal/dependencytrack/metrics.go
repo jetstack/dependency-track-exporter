@@ -6,7 +6,14 @@ import (
 
 // PortfolioMetrics are metrics for the whole portfolio
 type PortfolioMetrics struct {
+	Critical           int32   `json:"critical"`
+	High               int32   `json:"high"`
+	Low                int32   `json:"low"`
+	Medium             int32   `json:"medium"`
+	Unassigned         int32   `json:"unassigned"`
 	InheritedRiskScore float64 `json:"inheritedRiskScore"`
+	FindingsAudited    int32   `json:"findingsAudited"`
+	FindingsUnaudited  int32   `json:"findingsUnaudited"`
 }
 
 // GetCurrentPortfolioMetrics returns the current metrics for the whole

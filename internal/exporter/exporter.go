@@ -54,9 +54,29 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 				Help: "The inherited risk score of the whole portfolio.",
 			},
 		)
+		vulnerabilities = prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: prometheus.BuildFQName(Namespace, "portfolio", "vulnerabilities"),
+				Help: "Number of vulnerabilities across the whole portfolio, by severity.",
+			},
+			[]string{
+				"severity",
+			},
+		)
+		findings = prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: prometheus.BuildFQName(Namespace, "portfolio", "findings"),
+				Help: "Number of findings across the whole portfolio, audited and unaudited.",
+			},
+			[]string{
+				"audited",
+			},
+		)
 	)
 	registry.MustRegister(
 		inheritedRiskScore,
+		vulnerabilities,
+		findings,
 	)
 
 	portfolioMetrics, err := e.Client.GetCurrentPortfolioMetrics()
@@ -65,6 +85,29 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 	}
 
 	inheritedRiskScore.Set(portfolioMetrics.InheritedRiskScore)
+
+	severities := map[string]int32{
+		"CRITICAL":   portfolioMetrics.Critical,
+		"HIGH":       portfolioMetrics.High,
+		"MEDIUM":     portfolioMetrics.Medium,
+		"LOW":        portfolioMetrics.Low,
+		"UNASSIGNED": portfolioMetrics.Unassigned,
+	}
+	for severity, v := range severities {
+		vulnerabilities.With(prometheus.Labels{
+			"severity": severity,
+		}).Set(float64(v))
+	}
+
+	findingsAudited := map[string]int32{
+		"true":  portfolioMetrics.FindingsAudited,
+		"false": portfolioMetrics.FindingsUnaudited,
+	}
+	for audited, v := range findingsAudited {
+		findings.With(prometheus.Labels{
+			"audited": audited,
+		}).Set(float64(v))
+	}
 
 	return nil
 }
