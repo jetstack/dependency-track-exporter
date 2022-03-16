@@ -2,10 +2,6 @@
 
 Exports Prometheus metrics for [Dependency-Track](https://dependencytrack.org/).
 
-## TODO
-
-- Github Actions workflows for tests and release
-
 ## Usage
 
 ```
@@ -53,3 +49,7 @@ dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",ana
 and on(uuid,name,version) dependency_track_project_active == 1
 ```
 
+## TODO
+
+- Test against a real Dependency-Track server spun up by docker-compose (or a
+  similar tool)

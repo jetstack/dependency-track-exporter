@@ -1,0 +1,60 @@
+builds:
+  - binary: dependency-track-exporter
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - "386"
+      - amd64
+      - arm
+      - arm64
+      - mips64le
+    flags:
+      - -v
+    ldflags: |
+      -X github.com/prometheus/common/version.Version={{.Version}}
+      -X github.com/prometheus/common/version.Revision={{.Commit}}
+      -X github.com/prometheus/common/version.Branch={{.Branch}}
+      -X github.com/prometheus/common/version.BuildDate={{.Date}}
+release:
+  github:
+    owner: ribbybibby
+    name: dependency-track-exporter
+dockers:
+  - image_templates:
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/arm64"
+    goarch: arm64
+docker_manifests:
+  - name_template: "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}"
+    image_templates:
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"
+  - name_template: "ghcr.io/ribbybibby/dependency-track-exporter:latest"
+    image_templates:
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
+      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"

@@ -1,0 +1,52 @@
+name: test-and-build
+on:
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+  push:
+    paths-ignore:
+      - 'README.md'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846
+
+      - name: Unshallow
+        run: git fetch --prune --unshallow
+
+      - name: Set up Go
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab
+        with:
+          go-version: 1.17
+
+      - name: Test
+        run: go test -short -v ./...
+
+  goreleaser:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846
+
+      - name: Unshallow
+        run: git fetch --prune --unshallow
+
+      - name: Set up Go
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab
+        with:
+          go-version: 1.17
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@b953231f81b8dfd023c58e0854a721e35037f28b
+        with:
+          args: --snapshot --skip-sign --skip-validate --skip-publish --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
