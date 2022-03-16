@@ -69,8 +69,3 @@ alerting rules:
 )
 * on (uuid,name,version) group_left(tags) dependency_track_project_tags
 ```
-
-## TODO
-
-- Test against a real Dependency-Track server spun up by docker-compose (or a
-  similar tool)
