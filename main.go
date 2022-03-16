@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"github.com/ribbybibby/dependency-track-exporter/internal/dependencytrack"
 	"github.com/ribbybibby/dependency-track-exporter/internal/exporter"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -21,6 +25,7 @@ func init() {
 
 func main() {
 	var (
+		webConfig     = webflag.AddFlags(kingpin.CommandLine)
 		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9916").String()
 		metricsPath   = kingpin.Flag("web.metrics-path", "Path under which to expose metrics").Default("/metrics").String()
 		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency-Track server address (default: %s or $%s)", dependencytrack.DefaultAddress, dependencytrack.EnvAddress)).String()
@@ -61,7 +66,26 @@ func main() {
 						 </html>`))
 	})
 
-	level.Info(logger).Log("msg", fmt.Sprintf("Listening on %s", *listenAddress))
-	level.Error(logger).Log("msg", http.ListenAndServe(*listenAddress, nil))
-	os.Exit(1)
+	srv := &http.Server{Addr: *listenAddress}
+	srvc := make(chan struct{})
+	term := make(chan os.Signal, 1)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
+		if err := web.ListenAndServe(srv, *webConfig, logger); err != http.ErrServerClosed {
+			level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
+			close(srvc)
+		}
+	}()
+
+	for {
+		select {
+		case <-term:
+			level.Info(logger).Log("msg", "Received SIGTERM, exiting gracefully...")
+			os.Exit(0)
+		case <-srvc:
+			os.Exit(1)
+		}
+	}
 }
