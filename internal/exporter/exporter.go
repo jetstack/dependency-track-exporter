@@ -206,15 +206,8 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			"name":    project.Name,
 			"version": project.Version,
 		}).Set(project.Metrics.InheritedRiskScore)
-	}
 
-	violations, err := e.Client.GetViolations(true)
-	if err != nil {
-		return err
-	}
-
-	for _, violation := range violations {
-		// Initialize all the possible series with a 0 value so that it
+		// Initialize all the possible violation series with a 0 value so that it
 		// properly records increments from 0 -> 1
 		for _, possibleType := range dependencytrack.PolicyViolationTypes {
 			for _, possibleState := range dependencytrack.PolicyViolationStates {
@@ -225,9 +218,9 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 				for _, possibleAnalysis := range append(dependencytrack.ViolationAnalysisStates, "") {
 					for _, possibleSuppressed := range []string{"true", "false"} {
 						policyViolations.With(prometheus.Labels{
-							"uuid":       violation.Project.UUID,
-							"name":       violation.Project.Name,
-							"version":    violation.Project.Version,
+							"uuid":       project.UUID,
+							"name":       project.Name,
+							"version":    project.Version,
 							"type":       possibleType,
 							"state":      possibleState,
 							"analysis":   possibleAnalysis,
@@ -237,6 +230,14 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 				}
 			}
 		}
+	}
+
+	violations, err := e.Client.GetViolations(true)
+	if err != nil {
+		return err
+	}
+
+	for _, violation := range violations {
 		var (
 			analysisState string
 			suppressed    string = "false"
