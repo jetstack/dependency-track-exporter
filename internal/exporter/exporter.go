@@ -82,6 +82,18 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 				"version",
 			},
 		)
+		tags = prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: prometheus.BuildFQName(Namespace, "project", "tags"),
+				Help: "Project tags.",
+			},
+			[]string{
+				"uuid",
+				"name",
+				"version",
+				"tags",
+			},
+		)
 		vulnerabilities = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: prometheus.BuildFQName(Namespace, "project", "vulnerabilities"),
@@ -134,6 +146,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 	)
 	registry.MustRegister(
 		active,
+		tags,
 		vulnerabilities,
 		policyViolations,
 		lastBOMImport,
@@ -155,6 +168,17 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			"name":    project.Name,
 			"version": project.Version,
 		}).Set(isActive)
+
+		projTags := ","
+		for _, t := range project.Tags {
+			projTags = projTags + t.Name + ","
+		}
+		tags.With(prometheus.Labels{
+			"uuid":    project.UUID,
+			"name":    project.Name,
+			"version": project.Version,
+			"tags":    projTags,
+		}).Set(1)
 
 		severities := map[string]int32{
 			"CRITICAL":   project.Metrics.Critical,

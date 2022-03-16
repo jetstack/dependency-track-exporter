@@ -36,6 +36,14 @@ func TestGetProjects(t *testing.T) {
 			      "unassigned": 4,
 			      "inheritedRiskScore": 1240
 			    },
+			    "tags": [
+			     {
+			       "name": "foo"
+			     },
+			     {
+			       "name": "bar"
+			     }
+			    ],
 			    "uuid": "fd1b10b9-678d-4af9-ad8e-877d1f357b03"
 			  },
 			  {
@@ -50,6 +58,11 @@ func TestGetProjects(t *testing.T) {
 			      "unassigned": 3,
 			      "inheritedRiskScore": 2560.26
 			    },
+			    "tags": [
+			     {
+			       "name": "foobar"
+			     }
+			    ],
 			    "uuid": "9b9a702a-a8b4-49fb-bb99-c05c1a8c8d49"
 			  }
 			]
@@ -77,6 +90,14 @@ func TestGetProjects(t *testing.T) {
 				Unassigned:         4,
 				InheritedRiskScore: 1240,
 			},
+			Tags: []ProjectTag{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
 			UUID: "fd1b10b9-678d-4af9-ad8e-877d1f357b03",
 		},
 		{
@@ -91,6 +112,11 @@ func TestGetProjects(t *testing.T) {
 				Medium:             6,
 				Unassigned:         3,
 				InheritedRiskScore: 2560.26,
+			},
+			Tags: []ProjectTag{
+				{
+					Name: "foobar",
+				},
 			},
 			UUID: "9b9a702a-a8b4-49fb-bb99-c05c1a8c8d49",
 		},

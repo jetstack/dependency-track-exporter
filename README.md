@@ -28,6 +28,7 @@ Flags:
 | ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------ |
 | dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.       |                                                  |
 | dependency_track_project_active                 | Is this project active?                                | uuid, name, version                              |
+| dependency_track_project_tags                   | Project tags.                                          | uuid, name, version, tags                        |
 | dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.   | uuid, name, version, severity                    |
 | dependency_track_project_policy_violations      | Policy violations for a project.                       | uuid, name, version, state, analysis, suppressed |
 | dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp. | uuid, name, version                              |
@@ -47,6 +48,26 @@ Exclude inactive projects:
 ```
 dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
 and on(uuid,name,version) dependency_track_project_active == 1
+```
+
+Exclude projects that don't match a particular tag:
+
+```
+dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
+and on(uuid,name,version) dependency_track_project_active == 1
+and on(uuid,name,version) dependency_track_project_tags{tags=~".*,prod,.*"}
+```
+
+Join the project tags label into the returned series so it can be used in
+alerting rules:
+
+```
+(
+  dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
+  and on(uuid,name,version) dependency_track_project_active == 1
+  and on(uuid,name,version) dependency_track_project_tags{tags=~".*,prod,.*"}
+)
+* on (uuid,name,version) group_left(tags) dependency_track_project_tags
 ```
 
 ## TODO

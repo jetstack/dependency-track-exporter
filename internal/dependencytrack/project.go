@@ -11,7 +11,13 @@ type Project struct {
 	Active        bool           `json:"active"`
 	LastBomImport Time           `json:"lastBomImport"`
 	Metrics       ProjectMetrics `json:"metrics"`
+	Tags          []ProjectTag   `json:"tags"`
 	UUID          string         `json:"uuid"`
+}
+
+// ProjectTag is a project's tag
+type ProjectTag struct {
+	Name string `json:"name"`
 }
 
 // ProjectMetrics are metrics for the project
