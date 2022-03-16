@@ -50,7 +50,7 @@ dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",ana
 and on(uuid,name,version) dependency_track_project_active == 1
 ```
 
-Exclude projects that don't match a particular tag:
+Only include projects tagged with `prod`:
 
 ```
 dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
@@ -58,14 +58,12 @@ and on(uuid,name,version) dependency_track_project_active == 1
 and on(uuid,name,version) dependency_track_project_tags{tags=~".*,prod,.*"}
 ```
 
-Join the project tags label into the returned series so it can be used in
-alerting rules:
+Or, join the tags label into the returned series for use in alerting rules:
 
 ```
 (
   dependency_track_project_policy_violations{state="WARN",analysis!="APPROVED",analysis!="REJECTED",suppressed="false"} > 0
   and on(uuid,name,version) dependency_track_project_active == 1
-  and on(uuid,name,version) dependency_track_project_tags{tags=~".*,prod,.*"}
 )
 * on (uuid,name,version) group_left(tags) dependency_track_project_tags
 ```
