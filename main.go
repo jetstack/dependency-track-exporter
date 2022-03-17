@@ -14,8 +14,8 @@ import (
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
-	"github.com/ribbybibby/dependency-track-exporter/internal/dependencytrack"
-	"github.com/ribbybibby/dependency-track-exporter/internal/exporter"
+	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
+	"github.com/jetstack/dependency-track-exporter/internal/exporter"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 

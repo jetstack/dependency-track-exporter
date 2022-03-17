@@ -9,7 +9,7 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/ribbybibby/dependency-track-exporter/internal/dependencytrack"
+	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
 )
 
 const (

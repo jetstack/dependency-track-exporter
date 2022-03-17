@@ -21,11 +21,11 @@ builds:
       -X github.com/prometheus/common/version.BuildDate={{.Date}}
 release:
   github:
-    owner: ribbybibby
+    owner: jetstack
     name: dependency-track-exporter
 dockers:
   - image_templates:
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-amd64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -37,7 +37,7 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
       - "--platform=linux/amd64"
   - image_templates:
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-arm64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -50,11 +50,11 @@ dockers:
       - "--platform=linux/arm64"
     goarch: arm64
 docker_manifests:
-  - name_template: "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}"
+  - name_template: "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}"
     image_templates:
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"
-  - name_template: "ghcr.io/ribbybibby/dependency-track-exporter:latest"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-amd64"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-arm64"
+  - name_template: "ghcr.io/jetstack/dependency-track-exporter:latest"
     image_templates:
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-amd64"
-      - "ghcr.io/ribbybibby/dependency-track-exporter:{{.Version}}-arm64"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-amd64"
+      - "ghcr.io/jetstack/dependency-track-exporter:{{.Version}}-arm64"

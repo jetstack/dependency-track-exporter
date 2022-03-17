@@ -1,4 +1,4 @@
-module github.com/ribbybibby/dependency-track-exporter
+module github.com/jetstack/dependency-track-exporter
 
 go 1.17
 
