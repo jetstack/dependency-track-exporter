@@ -23,6 +23,10 @@ Flags:
       --version             Show application version.
 ```
 
+The API key the exporter uses needs to have the following permissions:
+- `POLICY_VIOLATION_ANALYSIS`
+- `VIEW_PORTFOLIO`
+
 ## Metrics
 
 | Metric                                          | Meaning                                                               | Labels                                           |
