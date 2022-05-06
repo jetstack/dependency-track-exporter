@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-kit/log v0.2.0
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.34.0
 	github.com/prometheus/exporter-toolkit v0.7.1
