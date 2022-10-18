@@ -1,7 +1,6 @@
 package dependencytrack
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -45,12 +44,10 @@ func (c *Client) GetAllProjects() ([]*Project, error) {
 	foundAll := false
 
 	for !foundAll {
-		fmt.Println("lastPaginationPage", lastPaginationPage)
 		req, err := c.GetProjects(lastPaginationPage, 100)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("req", req)
 		if len(req) == 0 {
 			foundAll = true
 			break

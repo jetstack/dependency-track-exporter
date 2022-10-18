@@ -49,7 +49,6 @@ func (c *Client) newRequest(method, path string, headers map[string]string, body
 	if headers != nil {
 		for key, value := range headers {
 			req.Header.Add(key, value)
-
 		}
 	}
 
