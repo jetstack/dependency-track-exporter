@@ -20,8 +20,9 @@ func TestGetAllProjects(t *testing.T) {
 		if got := r.Method; got != http.MethodGet {
 			t.Errorf("Got request method %v, want %v", got, http.MethodGet)
 		}
-		fmt.Fprintf(w,
-			`
+		if r.Header.Get("pageNumber") == "1" && r.Header.Get("pageSize") == "100" {
+			fmt.Fprintf(w,
+				`
 			[
 			  {
 			    "name": "foo",
@@ -69,8 +70,65 @@ func TestGetAllProjects(t *testing.T) {
 			  }
 			]
 			`,
-			now.Unix(),
-		)
+				now.Unix(),
+			)
+		}
+		if r.Header.Get("pageNumber") == "2" && r.Header.Get("pageSize") == "100" {
+			fmt.Fprintf(w,
+				`
+			[
+			  {
+			    "name": "foo",
+			    "version": "bar",
+			    "active": true,
+			    "classifier": "CONTAINER",
+			    "lastBomImport": %d,
+			    "metrics": {
+			      "critical": 0,
+			      "high": 1,
+			      "low": 2,
+			      "medium": 3,
+			      "unassigned": 4,
+			      "inheritedRiskScore": 1240
+			    },
+			    "tags": [
+			     {
+			       "name": "foo"
+			     },
+			     {
+			       "name": "bar"
+			     }
+			    ],
+			    "uuid": "fd1b10b9-678d-4af9-ad8e-874d1f357b03"
+			  },
+			  {
+			    "name": "bar",
+			    "version": "foo",
+			    "active": false,
+			    "classifier": "APPLICATION",
+			    "metrics": {
+			      "critical": 50,
+			      "high": 25,
+			      "low": 12,
+			      "medium": 6,
+			      "unassigned": 3,
+			      "inheritedRiskScore": 2560.26
+			    },
+			    "tags": [
+			     {
+			       "name": "foobar"
+			     }
+			    ],
+			    "uuid": "9b9a702a-a8b4-42fb-bb99-c05c1a8c8d49"
+			  }
+			]
+			`,
+				now.Unix(),
+			)
+		}
+		if r.Header.Get("pageNumber") == "3" && r.Header.Get("pageSize") == "100" {
+			fmt.Fprintf(w, `[]`)
+		}
 	})
 
 	got, err := client.GetAllProjects()
@@ -123,6 +181,51 @@ func TestGetAllProjects(t *testing.T) {
 				},
 			},
 			UUID: "9b9a702a-a8b4-49fb-bb99-c05c1a8c8d49",
+		},
+		{
+			Name:          "foo",
+			Version:       "bar",
+			Classifier:    "CONTAINER",
+			Active:        true,
+			LastBomImport: Time{now},
+			Metrics: ProjectMetrics{
+				Critical:           0,
+				High:               1,
+				Low:                2,
+				Medium:             3,
+				Unassigned:         4,
+				InheritedRiskScore: 1240,
+			},
+			Tags: []ProjectTag{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
+			UUID: "fd1b10b9-678d-4af9-ad8e-874d1f357b03",
+		},
+		{
+			Name:          "bar",
+			Version:       "foo",
+			Classifier:    "APPLICATION",
+			Active:        false,
+			LastBomImport: Time{},
+			Metrics: ProjectMetrics{
+				Critical:           50,
+				High:               25,
+				Low:                12,
+				Medium:             6,
+				Unassigned:         3,
+				InheritedRiskScore: 2560.26,
+			},
+			Tags: []ProjectTag{
+				{
+					Name: "foobar",
+				},
+			},
+			UUID: "9b9a702a-a8b4-42fb-bb99-c05c1a8c8d49",
 		},
 	}
 
