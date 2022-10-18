@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
 )
 
 const (
@@ -186,7 +186,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		inheritedRiskScore,
 	)
 
-	projects, err := e.Client.GetProjects()
+	projects, err := e.Client.GetAllProjects()
 	if err != nil {
 		return err
 	}
