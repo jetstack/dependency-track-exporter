@@ -30,7 +30,7 @@ func New(opts ...Option) *Client {
 	}
 }
 
-func (c *Client) newRequest(method, path string, body interface{}) (*http.Request, error) {
+func (c *Client) newRequest(method, path string, headers map[string]string, body interface{}) (*http.Request, error) {
 	var buf bytes.Buffer
 	if body != nil {
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
@@ -46,6 +46,12 @@ func (c *Client) newRequest(method, path string, body interface{}) (*http.Reques
 	}
 	req.Header.Add("X-Api-Key", c.opts.APIKey)
 	req.Header.Add("Content-Type", "application/json")
+	if headers != nil {
+		for key, value := range headers {
+			req.Header.Add(key, value)
+
+		}
+	}
 
 	return req, nil
 }

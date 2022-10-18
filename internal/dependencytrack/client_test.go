@@ -50,7 +50,7 @@ func TestClientRequest(t *testing.T) {
 		json.NewEncoder(w).Encode(expectedRespBody)
 	})
 
-	req, err := client.newRequest(http.MethodPost, "/foobar", expectedReqBody)
+	req, err := client.newRequest(http.MethodPost, "/foobar", nil, expectedReqBody)
 	if err != nil {
 		t.Fatal(err)
 	}

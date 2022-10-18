@@ -61,7 +61,7 @@ type ViolationAnalysis struct {
 func (c *Client) GetViolations(suppressed bool) ([]*PolicyViolation, error) {
 	params := url.Values{}
 	params.Add("suppressed", strconv.FormatBool(suppressed))
-	req, err := c.newRequest(http.MethodGet, fmt.Sprintf("/api/v1/violation?%s", params.Encode()), nil)
+	req, err := c.newRequest(http.MethodGet, fmt.Sprintf("/api/v1/violation?%s", params.Encode()), nil, nil)
 	if err != nil {
 		return nil, err
 	}

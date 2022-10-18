@@ -19,7 +19,7 @@ type PortfolioMetrics struct {
 // GetCurrentPortfolioMetrics returns the current metrics for the whole
 // portfolio
 func (c *Client) GetCurrentPortfolioMetrics() (*PortfolioMetrics, error) {
-	req, err := c.newRequest(http.MethodGet, "/api/v1/metrics/portfolio/current", nil)
+	req, err := c.newRequest(http.MethodGet, "/api/v1/metrics/portfolio/current", nil, nil)
 	if err != nil {
 		return nil, err
 	}
