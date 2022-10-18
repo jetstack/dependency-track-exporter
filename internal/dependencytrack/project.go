@@ -35,33 +35,30 @@ type ProjectMetrics struct {
 
 // GetAllProjects returns a list of all projects with the help of pagination
 func (c *Client) GetAllProjects() ([]*Project, error) {
-	// dependency track per default only returns a 100 items per get, therefore we need to iterate over all pages to get all projects
+	// dependency track per default only returns a 100 items per get, therefore we need to iterate over allProjects pages to get allProjects projects
 
-	// all project found trough pagination
-	allProjectsFound := []*Project{}
+	// allProjects found in pagination
+	allProjects := []*Project{}
 	// the last project found in the last pagination page result
-	lastFoundProject := Project{}
-	lastProjectPage := 1
-	// state var to show if all projects where found
-	didFindAllProjects := false
+	lastPaginationPage := 1
+	// state var to show if allProjects projects where found
+	foundAll := false
 
-	for !didFindAllProjects {
-		fmt.Printf("lastProjectPage: %v\n", lastProjectPage)
-		req, err := c.GetProjects(lastProjectPage, 100)
+	for !foundAll {
+		fmt.Println("lastPaginationPage", lastPaginationPage)
+		req, err := c.GetProjects(lastPaginationPage, 100)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(req[len(req)-1].UUID)
-
-		if req[len(req)-1].UUID == lastFoundProject.UUID {
-			didFindAllProjects = true
+		fmt.Println("req", req)
+		if len(req) == 0 {
+			foundAll = true
 			break
 		}
-
-		allProjectsFound = append(allProjectsFound, req...)
-		lastFoundProject = req[len(req)-1] // TODO fix
+		allProjects = append(allProjects, req...)
+		lastPaginationPage++
 	}
-	return allProjectsFound, nil
+	return allProjects, nil
 }
 
 // GetProjects returns a list of all projects with pagination
