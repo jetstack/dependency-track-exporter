@@ -1,6 +1,7 @@
 package dependencytrack
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -63,7 +64,8 @@ func (c *Client) GetProjects(pageNumber int, pageSize int) ([]*Project, error) {
 	var headers = map[string]string{}
 	headers["pageNumber"] = strconv.Itoa(pageNumber)
 	headers["pageSize"] = strconv.Itoa(pageSize)
-	req, err := c.newRequest(http.MethodGet, "/api/v1/project", headers, nil)
+	var url = fmt.Sprintf("/api/v1/project?pageSize=100&pageNumber=%d", pageNumber)
+	req, err := c.newRequest(http.MethodGet, url, headers, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +74,5 @@ func (c *Client) GetProjects(pageNumber int, pageSize int) ([]*Project, error) {
 	if err := c.do(req, &out); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
