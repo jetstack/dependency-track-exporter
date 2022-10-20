@@ -20,7 +20,7 @@ func TestGetAllProjects(t *testing.T) {
 		if got := r.Method; got != http.MethodGet {
 			t.Errorf("Got request method %v, want %v", got, http.MethodGet)
 		}
-		if r.Header.Get("pageNumber") == "1" && r.Header.Get("pageSize") == "100" {
+		if r.URL.Query().Get("pageNumber") == "1" && r.URL.Query().Get("pageSize") == "100" {
 			fmt.Fprintf(w,
 				`
 			[
@@ -73,7 +73,7 @@ func TestGetAllProjects(t *testing.T) {
 				now.Unix(),
 			)
 		}
-		if r.Header.Get("pageNumber") == "2" && r.Header.Get("pageSize") == "100" {
+		if r.URL.Query().Get("pageNumber") == "2" && r.URL.Query().Get("pageSize") == "100" {
 			fmt.Fprintf(w,
 				`
 			[
@@ -245,7 +245,7 @@ func TestGetProjectsByPage(t *testing.T) {
 		if got := r.Method; got != http.MethodGet {
 			t.Errorf("Got request method %v, want %v", got, http.MethodGet)
 		}
-		if r.Header.Get("pageNumber") == "1" && r.Header.Get("pageSize") == "1" {
+		if r.URL.Query().Get("pageNumber") == "1" && r.URL.Query().Get("pageSize") == "1" {
 			fmt.Fprintf(w,
 				`
 			[
@@ -278,7 +278,7 @@ func TestGetProjectsByPage(t *testing.T) {
 				now.Unix(),
 			)
 		}
-		if r.Header.Get("pageNumber") == "2" && r.Header.Get("pageSize") == "1" {
+		if r.URL.Query().Get("pageNumber") == "2" && r.URL.Query().Get("pageSize") == "1" {
 			fmt.Fprintf(w,
 				`
 			[

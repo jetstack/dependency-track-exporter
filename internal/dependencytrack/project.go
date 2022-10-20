@@ -3,7 +3,6 @@ package dependencytrack
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 )
 
 // Project is a project in Dependency-Track
@@ -61,11 +60,8 @@ func (c *Client) GetAllProjects() ([]*Project, error) {
 
 // GetProjects returns a list of all projects with pagination
 func (c *Client) GetProjects(pageNumber int, pageSize int) ([]*Project, error) {
-	var headers = map[string]string{}
-	headers["pageNumber"] = strconv.Itoa(pageNumber)
-	headers["pageSize"] = strconv.Itoa(pageSize)
-	var url = fmt.Sprintf("/api/v1/project?pageSize=100&pageNumber=%d", pageNumber)
-	req, err := c.newRequest(http.MethodGet, url, headers, nil)
+	var url = fmt.Sprintf("/api/v1/project?pageSize=%d&pageNumber=%d", pageSize, pageNumber)
+	req, err := c.newRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
