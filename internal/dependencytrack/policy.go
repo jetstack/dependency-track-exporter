@@ -56,12 +56,39 @@ type ViolationAnalysis struct {
 	IsSuppressed  bool   `json:"isSuppressed,omitempty"`
 }
 
+// GetAllViolations returns violations for the entire portfolio. Suppressed
+// violations are omitted unless suppressed is true
+func (c *Client) GetAllViolations(suppressed bool) ([]*PolicyViolation, error) {
+	// dependency track per default only returns a 100 items per get, therefore we need to iterate over all PolicyViolation pages to get all PolicyViolation
+
+	// all PolicyViolation found in pagination
+	allPolicyViolations := []*PolicyViolation{}
+	// the last project found in the last pagination page result
+	lastPaginationPage := 1
+	// state var to show if all PolicyViolation projects where found
+	foundAll := false
+
+	for !foundAll {
+		req, err := c.GetViolations(suppressed, lastPaginationPage, 100)
+		if err != nil {
+			return nil, err
+		}
+		if len(req) == 0 {
+			foundAll = true
+			break
+		}
+		allPolicyViolations = append(allPolicyViolations, req...)
+		lastPaginationPage++
+	}
+	return allPolicyViolations, nil
+}
+
 // GetViolations returns violations for the entire portfolio. Suppressed
 // violations are omitted unless suppressed is true
-func (c *Client) GetViolations(suppressed bool) ([]*PolicyViolation, error) {
+func (c *Client) GetViolations(suppressed bool, pageNumber int, pageSize int) ([]*PolicyViolation, error) {
 	params := url.Values{}
 	params.Add("suppressed", strconv.FormatBool(suppressed))
-	req, err := c.newRequest(http.MethodGet, fmt.Sprintf("/api/v1/violation?%s", params.Encode()), nil)
+	req, err := c.newRequest(http.MethodGet, fmt.Sprintf("/api/v1/violation?%s&pageSize=%d&pageNumber=%d", params.Encode(), pageSize, pageNumber), nil)
 	if err != nil {
 		return nil, err
 	}
