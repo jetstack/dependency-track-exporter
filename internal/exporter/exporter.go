@@ -257,7 +257,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		}
 	}
 
-	violations, err := e.Client.GetAllViolations(true)
+	violations, err := e.Client.GetAllViolations(true) // TODO add parameterization from /metrics endpoint
 	if err != nil {
 		return err
 	}
