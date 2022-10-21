@@ -60,8 +60,7 @@ func (c *Client) GetAllProjects() ([]*Project, error) {
 
 // GetProjects returns a list of all projects with pagination
 func (c *Client) GetProjects(pageNumber int, pageSize int) ([]*Project, error) {
-	var url = fmt.Sprintf("/api/v1/project?pageSize=%d&pageNumber=%d", pageSize, pageNumber)
-	req, err := c.newRequest(http.MethodGet, url, nil)
+	req, err := c.newRequest(http.MethodGet, fmt.Sprintf("/api/v1/project?pageSize=%d&pageNumber=%d", pageSize, pageNumber), nil)
 	if err != nil {
 		return nil, err
 	}
