@@ -257,7 +257,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		}
 	}
 
-	violations, err := e.Client.GetViolations(true)
+	violations, err := e.Client.GetAllViolations(true)
 	if err != nil {
 		return err
 	}
