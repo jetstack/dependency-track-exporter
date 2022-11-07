@@ -8,14 +8,14 @@ import (
 	"syscall"
 
 	"github.com/go-kit/log/level"
+	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
+	"github.com/jetstack/dependency-track-exporter/internal/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
-	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
-	"github.com/jetstack/dependency-track-exporter/internal/exporter"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -25,8 +25,7 @@ func init() {
 
 func main() {
 	var (
-		webConfig     = webflag.AddFlags(kingpin.CommandLine)
-		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9916").String()
+		webConfig     = webflag.AddFlags(kingpin.CommandLine, ":9916")
 		metricsPath   = kingpin.Flag("web.metrics-path", "Path under which to expose metrics").Default("/metrics").String()
 		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency-Track server address (default: %s or $%s)", dependencytrack.DefaultAddress, dependencytrack.EnvAddress)).String()
 		dtAPIKey      = kingpin.Flag("dtrack.api-key", fmt.Sprintf("Dependency-Track API key (default: $%s)", dependencytrack.EnvAPIKey)).String()
@@ -66,14 +65,13 @@ func main() {
 						 </html>`))
 	})
 
-	srv := &http.Server{Addr: *listenAddress}
 	srvc := make(chan struct{})
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
-		if err := web.ListenAndServe(srv, *webConfig, logger); err != http.ErrServerClosed {
+		srv := &http.Server{}
+		if err := web.ListenAndServe(srv, webConfig, logger); err != http.ErrServerClosed {
 			level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
 			close(srvc)
 		}
