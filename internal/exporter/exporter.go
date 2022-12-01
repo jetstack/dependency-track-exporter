@@ -1,15 +1,16 @@
 package exporter
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/nscuro/dtrack-client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 
 // Exporter exports metrics from a Dependency-Track server
 type Exporter struct {
-	Client *dependencytrack.Client
+	Client *dtrack.Client
 	Logger log.Logger
 }
 
@@ -28,13 +29,13 @@ func (e *Exporter) HandlerFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		registry := prometheus.NewRegistry()
 
-		if err := e.collectPortfolioMetrics(registry); err != nil {
+		if err := e.collectPortfolioMetrics(r.Context(), registry); err != nil {
 			level.Error(e.Logger).Log("err", err)
 			http.Error(w, fmt.Sprintf("error: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		if err := e.collectProjectMetrics(registry); err != nil {
+		if err := e.collectProjectMetrics(r.Context(), registry); err != nil {
 			level.Error(e.Logger).Log("err", err)
 			http.Error(w, fmt.Sprintf("error: %s", err), http.StatusInternalServerError)
 			return
@@ -46,7 +47,7 @@ func (e *Exporter) HandlerFunc() http.HandlerFunc {
 	}
 }
 
-func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error {
+func (e *Exporter) collectPortfolioMetrics(ctx context.Context, registry *prometheus.Registry) error {
 	var (
 		inheritedRiskScore = prometheus.NewGauge(
 			prometheus.GaugeOpts{
@@ -79,14 +80,14 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 		findings,
 	)
 
-	portfolioMetrics, err := e.Client.GetCurrentPortfolioMetrics()
+	portfolioMetrics, err := e.Client.Metrics.LatestPortfolioMetrics(ctx)
 	if err != nil {
 		return err
 	}
 
 	inheritedRiskScore.Set(portfolioMetrics.InheritedRiskScore)
 
-	severities := map[string]int32{
+	severities := map[string]int{
 		"CRITICAL":   portfolioMetrics.Critical,
 		"HIGH":       portfolioMetrics.High,
 		"MEDIUM":     portfolioMetrics.Medium,
@@ -99,7 +100,7 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 		}).Set(float64(v))
 	}
 
-	findingsAudited := map[string]int32{
+	findingsAudited := map[string]int{
 		"true":  portfolioMetrics.FindingsAudited,
 		"false": portfolioMetrics.FindingsUnaudited,
 	}
@@ -112,7 +113,7 @@ func (e *Exporter) collectPortfolioMetrics(registry *prometheus.Registry) error 
 	return nil
 }
 
-func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
+func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *prometheus.Registry) error {
 	var (
 		info = prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -186,7 +187,9 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		inheritedRiskScore,
 	)
 
-	projects, err := e.Client.GetProjects()
+	projects, err := dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
+		return e.Client.Project.GetAll(ctx, po)
+	})
 	if err != nil {
 		return err
 	}
@@ -197,7 +200,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			projTags = projTags + t.Name + ","
 		}
 		info.With(prometheus.Labels{
-			"uuid":       project.UUID,
+			"uuid":       project.UUID.String(),
 			"name":       project.Name,
 			"version":    project.Version,
 			"classifier": project.Classifier,
@@ -205,7 +208,7 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			"tags":       projTags,
 		}).Set(1)
 
-		severities := map[string]int32{
+		severities := map[string]int{
 			"CRITICAL":   project.Metrics.Critical,
 			"HIGH":       project.Metrics.High,
 			"MEDIUM":     project.Metrics.Medium,
@@ -214,41 +217,46 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		}
 		for severity, v := range severities {
 			vulnerabilities.With(prometheus.Labels{
-				"uuid":     project.UUID,
+				"uuid":     project.UUID.String(),
 				"name":     project.Name,
 				"version":  project.Version,
 				"severity": severity,
 			}).Set(float64(v))
 		}
 		lastBOMImport.With(prometheus.Labels{
-			"uuid":    project.UUID,
+			"uuid":    project.UUID.String(),
 			"name":    project.Name,
 			"version": project.Version,
-		}).Set(float64(project.LastBomImport.Unix()))
+		}).Set(float64(project.LastBOMImport))
 
 		inheritedRiskScore.With(prometheus.Labels{
-			"uuid":    project.UUID,
+			"uuid":    project.UUID.String(),
 			"name":    project.Name,
 			"version": project.Version,
 		}).Set(project.Metrics.InheritedRiskScore)
 
 		// Initialize all the possible violation series with a 0 value so that it
 		// properly records increments from 0 -> 1
-		for _, possibleType := range dependencytrack.PolicyViolationTypes {
-			for _, possibleState := range dependencytrack.PolicyViolationStates {
-				// If there isn't any analysis for a policy
-				// violation then the value in the UI is
-				// actually empty. So let's represent that in
-				// these metrics as a possible analysis state.
-				for _, possibleAnalysis := range append(dependencytrack.ViolationAnalysisStates, "") {
+		for _, possibleType := range []string{"LICENSE", "OPERATIONAL", "SECURITY"} {
+			for _, possibleState := range []string{"INFO", "WARN", "FAIL"} {
+				for _, possibleAnalysis := range []dtrack.ViolationAnalysisState{
+					dtrack.ViolationAnalysisStateApproved,
+					dtrack.ViolationAnalysisStateRejected,
+					dtrack.ViolationAnalysisStateNotSet,
+					// If there isn't any analysis for a policy
+					// violation then the value in the UI is
+					// actually empty. So let's represent that in
+					// these metrics as a possible analysis state.
+					"",
+				} {
 					for _, possibleSuppressed := range []string{"true", "false"} {
 						policyViolations.With(prometheus.Labels{
-							"uuid":       project.UUID,
+							"uuid":       project.UUID.String(),
 							"name":       project.Name,
 							"version":    project.Version,
 							"type":       possibleType,
 							"state":      possibleState,
-							"analysis":   possibleAnalysis,
+							"analysis":   string(possibleAnalysis),
 							"suppressed": possibleSuppressed,
 						})
 					}
@@ -257,7 +265,9 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 		}
 	}
 
-	violations, err := e.Client.GetViolations(true)
+	violations, err := dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.PolicyViolation], error) {
+		return e.Client.PolicyViolation.GetAll(ctx, true, po)
+	})
 	if err != nil {
 		return err
 	}
@@ -268,11 +278,11 @@ func (e *Exporter) collectProjectMetrics(registry *prometheus.Registry) error {
 			suppressed    string = "false"
 		)
 		if analysis := violation.Analysis; analysis != nil {
-			analysisState = analysis.AnalysisState
-			suppressed = strconv.FormatBool(analysis.IsSuppressed)
+			analysisState = string(analysis.State)
+			suppressed = strconv.FormatBool(analysis.Suppressed)
 		}
 		policyViolations.With(prometheus.Labels{
-			"uuid":       violation.Project.UUID,
+			"uuid":       violation.Project.UUID.String(),
 			"name":       violation.Project.Name,
 			"version":    violation.Project.Version,
 			"type":       violation.Type,

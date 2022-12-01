@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/go-kit/log/level"
-	"github.com/jetstack/dependency-track-exporter/internal/dependencytrack"
 	"github.com/jetstack/dependency-track-exporter/internal/exporter"
+	"github.com/nscuro/dtrack-client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
@@ -17,6 +17,11 @@ import (
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"gopkg.in/alecthomas/kingpin.v2"
+)
+
+const (
+	envAddress string = "DEPENDENCY_TRACK_ADDR"
+	envAPIKey  string = "DEPENDENCY_TRACK_API_KEY"
 )
 
 func init() {
@@ -27,8 +32,8 @@ func main() {
 	var (
 		webConfig     = webflag.AddFlags(kingpin.CommandLine, ":9916")
 		metricsPath   = kingpin.Flag("web.metrics-path", "Path under which to expose metrics").Default("/metrics").String()
-		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency-Track server address (default: %s or $%s)", dependencytrack.DefaultAddress, dependencytrack.EnvAddress)).String()
-		dtAPIKey      = kingpin.Flag("dtrack.api-key", fmt.Sprintf("Dependency-Track API key (default: $%s)", dependencytrack.EnvAPIKey)).String()
+		dtAddress     = kingpin.Flag("dtrack.address", fmt.Sprintf("Dependency-Track server address (can also be set with $%s)", envAddress)).Default("http://localhost:8080").Envar(envAddress).String()
+		dtAPIKey      = kingpin.Flag("dtrack.api-key", fmt.Sprintf("Dependency-Track API key (can also be set with $%s)", envAPIKey)).Envar(envAPIKey).Required().String()
 		promlogConfig = promlog.Config{}
 	)
 
@@ -42,15 +47,14 @@ func main() {
 	level.Info(logger).Log("msg", fmt.Sprintf("Starting %s_exporter %s", exporter.Namespace, version.Info()))
 	level.Info(logger).Log("msg", fmt.Sprintf("Build context %s", version.BuildContext()))
 
-	var opts []dependencytrack.Option
-	if *dtAddress != "" {
-		opts = append(opts, dependencytrack.WithAddress(*dtAddress))
+	c, err := dtrack.NewClient(*dtAddress, dtrack.WithAPIKey(*dtAPIKey))
+	if err != nil {
+		level.Error(logger).Log("msg", "Error creating client", "err", err)
+		os.Exit(1)
 	}
-	if *dtAPIKey != "" {
-		opts = append(opts, dependencytrack.WithAPIKey(*dtAPIKey))
-	}
+
 	e := exporter.Exporter{
-		Client: dependencytrack.New(opts...),
+		Client: c,
 		Logger: logger,
 	}
 
