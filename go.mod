@@ -3,8 +3,8 @@ module github.com/jetstack/dependency-track-exporter
 go 1.19
 
 require (
+	github.com/DependencyTrack/client-go v0.8.0
 	github.com/go-kit/log v0.2.1
-	github.com/nscuro/dtrack-client v0.6.1-0.20221201171224-15d88af781f9
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/exporter-toolkit v0.8.2
