@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	dtrack "github.com/DependencyTrack/client-go"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/nscuro/dtrack-client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

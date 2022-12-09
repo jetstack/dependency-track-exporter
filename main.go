@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	dtrack "github.com/DependencyTrack/client-go"
 	"github.com/go-kit/log/level"
 	"github.com/jetstack/dependency-track-exporter/internal/exporter"
-	"github.com/nscuro/dtrack-client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
