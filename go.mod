@@ -3,8 +3,10 @@ module github.com/jetstack/dependency-track-exporter
 go 1.19
 
 require (
-	github.com/DependencyTrack/client-go v0.8.0
+	github.com/DependencyTrack/client-go v0.8.1-0.20230206124230-e451b5e186af
 	github.com/go-kit/log v0.2.1
+	github.com/google/go-cmp v0.5.9
+	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.39.0
 	github.com/prometheus/exporter-toolkit v0.8.2
@@ -19,7 +21,6 @@ require (
 	github.com/coreos/go-systemd/v22 v22.4.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
