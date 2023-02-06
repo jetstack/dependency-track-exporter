@@ -24,7 +24,7 @@ Flags:
 ```
 
 The API key the exporter uses needs to have the following permissions:
-- `POLICY_VIOLATION_ANALYSIS`
+- `VIEW_POLICY_VIOLATION`
 - `VIEW_PORTFOLIO`
 
 ## Metrics
