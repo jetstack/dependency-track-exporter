@@ -187,9 +187,7 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 		inheritedRiskScore,
 	)
 
-	projects, err := dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
-		return e.Client.Project.GetAll(ctx, po)
-	})
+	projects, err := e.fetchProjects(ctx)
 	if err != nil {
 		return err
 	}
@@ -265,9 +263,7 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 		}
 	}
 
-	violations, err := dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.PolicyViolation], error) {
-		return e.Client.PolicyViolation.GetAll(ctx, true, po)
-	})
+	violations, err := e.fetchPolicyViolations(ctx)
 	if err != nil {
 		return err
 	}
@@ -293,4 +289,16 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 	}
 
 	return nil
+}
+
+func (e *Exporter) fetchProjects(ctx context.Context) ([]dtrack.Project, error) {
+	return dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
+		return e.Client.Project.GetAll(ctx, po)
+	})
+}
+
+func (e *Exporter) fetchPolicyViolations(ctx context.Context) ([]dtrack.PolicyViolation, error) {
+	return dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.PolicyViolation], error) {
+		return e.Client.PolicyViolation.GetAll(ctx, true, po)
+	})
 }
