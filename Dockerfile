@@ -12,7 +12,7 @@ COPY *.go ./
 
 COPY internal ./internal
 
-RUN go build -o /dependency-track-exporter
+RUN CGO_ENABLED=0 go build -o /dependency-track-exporter
 
 FROM gcr.io/distroless/static:nonroot
 
