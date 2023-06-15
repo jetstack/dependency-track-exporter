@@ -1,6 +1,6 @@
 module github.com/jetstack/dependency-track-exporter
 
-go 1.19
+go 1.20
 
 require (
 	github.com/DependencyTrack/client-go v0.9.0
