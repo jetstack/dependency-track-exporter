@@ -3,7 +3,7 @@ module github.com/jetstack/dependency-track-exporter
 go 1.20
 
 require (
-	github.com/DependencyTrack/client-go v0.10.0
+	github.com/DependencyTrack/client-go v0.11.0
 	github.com/alecthomas/kingpin/v2 v2.3.2
 	github.com/go-kit/log v0.2.1
 	github.com/google/go-cmp v0.5.9
