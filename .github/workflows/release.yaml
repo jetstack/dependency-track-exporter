@@ -20,7 +20,7 @@ jobs:
         run: git fetch --force --tags
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
+        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3
 
       - name: Login to ghcr.io
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
