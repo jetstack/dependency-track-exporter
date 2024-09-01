@@ -18,6 +18,8 @@ Flags:
                             Dependency-Track server address (default: http://localhost:8080 or $DEPENDENCY_TRACK_ADDR)
       --dtrack.api-key=DTRACK.API-KEY
                             Dependency-Track API key (default: $DEPENDENCY_TRACK_API_KEY)
+      --[no-]exporter.reduce-policy-cardinality  
+                            Initialize all policy_violations metric label values (can also be set with $EXPORTER_REDUCE_POLICY_CARDINALITY)
       --log.level=info      Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt   Output format of log messages. One of: [logfmt, json]
       --version             Show application version.

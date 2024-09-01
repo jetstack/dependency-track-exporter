@@ -10,15 +10,15 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@v4
 
       - name: Unshallow
         run: git fetch --prune --unshallow
 
       - name: Set up Go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.20.x"
+          go-version-file: 'go.mod'
 
       - name: Test
         run: go test -short -v ./...
@@ -30,19 +30,19 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@v4
 
       - name: Unshallow
         run: git fetch --prune --unshallow
 
       - name: Set up Go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.20.x"
+          go-version-file: 'go.mod'
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7
+        uses: goreleaser/goreleaser-action@v6
         with:
-          args: --snapshot --skip-sign --skip-validate --skip-publish --rm-dist
+          args: --snapshot --skip validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
