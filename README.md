@@ -18,6 +18,12 @@ Flags:
                             Dependency-Track server address (default: http://localhost:8080 or $DEPENDENCY_TRACK_ADDR)
       --dtrack.api-key=DTRACK.API-KEY
                             Dependency-Track API key (default: $DEPENDENCY_TRACK_API_KEY)
+      --dtrack.project-tags=DTRACK.PROJECT-TAGS
+                            Comma-separated list of project tags to filter on
+      --dtrack.poll-interval=6h
+                            Interval to poll Dependency-Track for metrics
+      --dtrack.initialize-violation-metrics
+                            Initialize all possible violation metric combinations to 0 (default: true)
       --log.level=info      Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt   Output format of log messages. One of: [logfmt, json]
       --version             Show application version.
@@ -31,14 +37,32 @@ The API key the exporter uses needs to have the following permissions:
 
 | Metric                                          | Meaning                                                               | Labels                                           |
 | ----------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
-| dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.                      |                                                  |
-| dependency_track_portfolio_vulnerabilities      | Number of vulnerabilities across the whole portfolio, by severity.    | severity                                         |
-| dependency_track_portfolio_findings             | Number of findings across the whole portfolio, audited and unaudited. | audited                                          |
-| dependency_track_project_info                   | Project information.                                                  | uuid, name, version, active, tags                |
-| dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.                  | uuid, name, version, severity                    |
-| dependency_track_project_policy_violations      | Policy violations for a project.                                      | uuid, name, version, state, analysis, suppressed |
-| dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp.                | uuid, name, version                              |
-| dependency_track_project_inherited_risk_score   | Inherited risk score for a project.                                   | uuid, name, version                              |
+| dependency_track_portfolio_inherited_risk_score | The inherited risk score of the whole portfolio.                      |                                                        |
+| dependency_track_portfolio_vulnerabilities      | Number of vulnerabilities across the whole portfolio, by severity.    | severity                                               |
+| dependency_track_portfolio_findings             | Number of findings across the whole portfolio, audited and unaudited. | audited                                                |
+| dependency_track_project_info                   | Project information.                                                  | uuid, name, version, classifier, active, tags          |
+| dependency_track_project_vulnerabilities        | Number of vulnerabilities for a project by severity.                  | uuid, name, version, severity                          |
+| dependency_track_project_policy_violations      | Policy violations for a project.                                      | uuid, name, version, type, state, analysis, suppressed |
+| dependency_track_project_last_bom_import        | Last BOM import date, represented as a Unix timestamp.                | uuid, name, version                                    |
+| dependency_track_project_inherited_risk_score   | Inherited risk score for a project.                                   | uuid, name, version                                    |
+
+## Performance & Memory Optimization
+
+If you have a very large Dependency-Track portfolio, the exporter can consume significant memory during polling due to the high cardinality of policy violation metrics.
+
+### High-Cardinality Metrics
+By default, the exporter initializes 72 unique metric series for every project (combinations of violation types, states, etc.) to ensure they record `0` instead of being absent. 
+
+To significantly reduce memory usage, you can disable this behavior:
+
+```bash
+--dtrack.initialize-violation-metrics=false
+```
+
+When disabled, metric series will only be created when an actual violation is detected.
+
+### Streaming
+The exporter uses streaming pagination to fetch data from Dependency-Track, ensuring that memory usage remains stable even as your portfolio grows.
 
 ## Example queries
 

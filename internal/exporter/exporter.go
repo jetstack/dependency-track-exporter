@@ -2,15 +2,18 @@ package exporter
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	dtrack "github.com/DependencyTrack/client-go"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/version"
 )
 
 const (
@@ -20,24 +23,24 @@ const (
 
 // Exporter exports metrics from a Dependency-Track server
 type Exporter struct {
-	Client *dtrack.Client
-	Logger log.Logger
+	Client                     *dtrack.Client
+	Logger                     log.Logger
+	ProjectTags                []string
+	InitializeViolationMetrics bool
+
+	mutex    sync.RWMutex
+	registry *prometheus.Registry
 }
 
 // HandlerFunc handles requests to /metrics
 func (e *Exporter) HandlerFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		registry := prometheus.NewRegistry()
+		e.mutex.RLock()
+		registry := e.registry
+		e.mutex.RUnlock()
 
-		if err := e.collectPortfolioMetrics(r.Context(), registry); err != nil {
-			level.Error(e.Logger).Log("err", err)
-			http.Error(w, fmt.Sprintf("error: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		if err := e.collectProjectMetrics(r.Context(), registry); err != nil {
-			level.Error(e.Logger).Log("err", err)
-			http.Error(w, fmt.Sprintf("error: %s", err), http.StatusInternalServerError)
+		if registry == nil {
+			http.Error(w, "Exporter not yet initialized", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -45,6 +48,46 @@ func (e *Exporter) HandlerFunc() http.HandlerFunc {
 		h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		h.ServeHTTP(w, r)
 	}
+}
+
+// Run starts the background polling of Dependency-Track metrics
+func (e *Exporter) Run(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	level.Info(e.Logger).Log("msg", "Starting background poller", "interval", interval)
+
+	// Initial poll
+	e.poll(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			level.Info(e.Logger).Log("msg", "Stopping background poller")
+			return
+		case <-ticker.C:
+			e.poll(ctx)
+		}
+	}
+}
+
+func (e *Exporter) poll(ctx context.Context) {
+	level.Debug(e.Logger).Log("msg", "Polling Dependency-Track metrics")
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(version.NewCollector(Namespace + "_exporter"))
+
+	if err := e.collectPortfolioMetrics(ctx, registry); err != nil {
+		level.Error(e.Logger).Log("msg", "Error collecting portfolio metrics", "err", err)
+	}
+
+	if err := e.collectProjectMetrics(ctx, registry); err != nil {
+		level.Error(e.Logger).Log("msg", "Error collecting project metrics", "err", err)
+	}
+
+	e.mutex.Lock()
+	e.registry = registry
+	e.mutex.Unlock()
+	level.Debug(e.Logger).Log("msg", "Successfully updated metrics cache")
 }
 
 func (e *Exporter) collectPortfolioMetrics(ctx context.Context, registry *prometheus.Registry) error {
@@ -187,24 +230,25 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 		inheritedRiskScore,
 	)
 
-	projects, err := e.fetchProjects(ctx)
-	if err != nil {
-		return err
-	}
+	matchedProjects := make(map[string]struct{})
 
-	for _, project := range projects {
-		projTags := ","
+	err := e.forEachProject(ctx, func(project dtrack.Project) error {
+		projectUUID := project.UUID.String()
+		matchedProjects[projectUUID] = struct{}{}
+
+		var tags []string
 		for _, t := range project.Tags {
-			projTags = projTags + t.Name + ","
+			tags = append(tags, t.Name)
 		}
-		info.With(prometheus.Labels{
-			"uuid":       project.UUID.String(),
-			"name":       project.Name,
-			"version":    project.Version,
-			"classifier": project.Classifier,
-			"active":     strconv.FormatBool(project.Active),
-			"tags":       projTags,
-		}).Set(1)
+
+		info.WithLabelValues(
+			projectUUID,
+			project.Name,
+			project.Version,
+			project.Classifier,
+			strconv.FormatBool(project.Active),
+			strings.Join(tags, ","),
+		).Set(1)
 
 		severities := map[string]int{
 			"CRITICAL":   project.Metrics.Critical,
@@ -214,61 +258,63 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 			"UNASSIGNED": project.Metrics.Unassigned,
 		}
 		for severity, v := range severities {
-			vulnerabilities.With(prometheus.Labels{
-				"uuid":     project.UUID.String(),
-				"name":     project.Name,
-				"version":  project.Version,
-				"severity": severity,
-			}).Set(float64(v))
+			vulnerabilities.WithLabelValues(
+				projectUUID,
+				project.Name,
+				project.Version,
+				severity,
+			).Set(float64(v))
 		}
-		lastBOMImport.With(prometheus.Labels{
-			"uuid":    project.UUID.String(),
-			"name":    project.Name,
-			"version": project.Version,
-		}).Set(float64(project.LastBOMImport))
+		lastBOMImport.WithLabelValues(
+			projectUUID,
+			project.Name,
+			project.Version,
+		).Set(float64(project.LastBOMImport))
 
-		inheritedRiskScore.With(prometheus.Labels{
-			"uuid":    project.UUID.String(),
-			"name":    project.Name,
-			"version": project.Version,
-		}).Set(project.Metrics.InheritedRiskScore)
+		inheritedRiskScore.WithLabelValues(
+			projectUUID,
+			project.Name,
+			project.Version,
+		).Set(project.Metrics.InheritedRiskScore)
 
 		// Initialize all the possible violation series with a 0 value so that it
-		// properly records increments from 0 -> 1
-		for _, possibleType := range []string{"LICENSE", "OPERATIONAL", "SECURITY"} {
-			for _, possibleState := range []string{"INFO", "WARN", "FAIL"} {
-				for _, possibleAnalysis := range []dtrack.ViolationAnalysisState{
-					dtrack.ViolationAnalysisStateApproved,
-					dtrack.ViolationAnalysisStateRejected,
-					dtrack.ViolationAnalysisStateNotSet,
-					// If there isn't any analysis for a policy
-					// violation then the value in the UI is
-					// actually empty. So let's represent that in
-					// these metrics as a possible analysis state.
-					"",
-				} {
-					for _, possibleSuppressed := range []string{"true", "false"} {
-						policyViolations.With(prometheus.Labels{
-							"uuid":       project.UUID.String(),
-							"name":       project.Name,
-							"version":    project.Version,
-							"type":       possibleType,
-							"state":      possibleState,
-							"analysis":   string(possibleAnalysis),
-							"suppressed": possibleSuppressed,
-						})
+		// properly records increments from 0 -> 1.
+		// Note: This accounts for 72 series per project.
+		if e.InitializeViolationMetrics {
+			for _, possibleType := range []string{"LICENSE", "OPERATIONAL", "SECURITY"} {
+				for _, possibleState := range []string{"INFO", "WARN", "FAIL"} {
+					for _, possibleAnalysis := range []dtrack.ViolationAnalysisState{
+						dtrack.ViolationAnalysisStateApproved,
+						dtrack.ViolationAnalysisStateRejected,
+						dtrack.ViolationAnalysisStateNotSet,
+						"",
+					} {
+						for _, possibleSuppressed := range []string{"true", "false"} {
+							policyViolations.WithLabelValues(
+								projectUUID,
+								project.Name,
+								project.Version,
+								possibleType,
+								possibleState,
+								string(possibleAnalysis),
+								possibleSuppressed,
+							).Set(0)
+						}
 					}
 				}
 			}
 		}
-	}
 
-	violations, err := e.fetchPolicyViolations(ctx)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	for _, violation := range violations {
+	err = e.forEachPolicyViolation(ctx, func(violation dtrack.PolicyViolation) error {
+		if _, ok := matchedProjects[violation.Project.UUID.String()]; !ok {
+			return nil
+		}
 		var (
 			analysisState string
 			suppressed    string = "false"
@@ -277,28 +323,70 @@ func (e *Exporter) collectProjectMetrics(ctx context.Context, registry *promethe
 			analysisState = string(analysis.State)
 			suppressed = strconv.FormatBool(analysis.Suppressed)
 		}
-		policyViolations.With(prometheus.Labels{
-			"uuid":       violation.Project.UUID.String(),
-			"name":       violation.Project.Name,
-			"version":    violation.Project.Version,
-			"type":       violation.Type,
-			"state":      violation.PolicyCondition.Policy.ViolationState,
-			"analysis":   analysisState,
-			"suppressed": suppressed,
-		}).Inc()
+		policyViolations.WithLabelValues(
+			violation.Project.UUID.String(),
+			violation.Project.Name,
+			violation.Project.Version,
+			violation.Type,
+			violation.PolicyCondition.Policy.ViolationState,
+			analysisState,
+			suppressed,
+		).Inc()
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
+func (e *Exporter) forEachProject(ctx context.Context, fn func(dtrack.Project) error) error {
+	if len(e.ProjectTags) == 0 {
+		return dtrack.ForEach(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
+			return e.Client.Project.GetAll(ctx, po)
+		}, fn)
+	}
+
+	seen := make(map[string]struct{})
+	for _, tag := range e.ProjectTags {
+		err := dtrack.ForEach(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
+			return e.Client.Project.GetAllByTag(ctx, tag, po)
+		}, func(p dtrack.Project) error {
+			id := p.UUID.String()
+			if _, ok := seen[id]; ok {
+				return nil
+			}
+			seen[id] = struct{}{}
+			return fn(p)
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Exporter) forEachPolicyViolation(ctx context.Context, fn func(dtrack.PolicyViolation) error) error {
+	return dtrack.ForEach(func(po dtrack.PageOptions) (dtrack.Page[dtrack.PolicyViolation], error) {
+		return e.Client.PolicyViolation.GetAll(ctx, true, po)
+	}, fn)
+}
+
 func (e *Exporter) fetchProjects(ctx context.Context) ([]dtrack.Project, error) {
-	return dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.Project], error) {
-		return e.Client.Project.GetAll(ctx, po)
+	var projects []dtrack.Project
+	err := e.forEachProject(ctx, func(p dtrack.Project) error {
+		projects = append(projects, p)
+		return nil
 	})
+	return projects, err
 }
 
 func (e *Exporter) fetchPolicyViolations(ctx context.Context) ([]dtrack.PolicyViolation, error) {
-	return dtrack.FetchAll(func(po dtrack.PageOptions) (dtrack.Page[dtrack.PolicyViolation], error) {
-		return e.Client.PolicyViolation.GetAll(ctx, true, po)
+	var violations []dtrack.PolicyViolation
+	err := e.forEachPolicyViolation(ctx, func(v dtrack.PolicyViolation) error {
+		violations = append(violations, v)
+		return nil
 	})
+	return violations, err
 }
